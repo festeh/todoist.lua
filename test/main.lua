@@ -3,6 +3,4 @@ vim.api.nvim_command('set runtimepath^=/home/dlipin/.local/share/nvim/lazy/nui.n
 package.loaded["todoist"] = nil
 local m = require("todoist")
 
-print(vim.inspect(m))
-
 m.init()
