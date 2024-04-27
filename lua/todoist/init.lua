@@ -22,21 +22,21 @@ local function draw()
         top_align = "center",
       },
     },
-    position = "center",
+    -- position = "50%",
     size = {
-      width = "80%",
-      height = "60%",
+      width = "100%",
+      height = "100%",
     },
   })
   local layout = Layout(
     {
-      position = "50%",
+      position = "0%",
       size = {
-        width = 80,
-        height = "60%",
+        width = "98%",
+        height = "98%",
       },
     },
-    Layout.Box(popup, { dir = "col" })
+    Layout.Box({ Layout.Box(popup, { size = "100%" }) })
   )
   layout:mount()
 end

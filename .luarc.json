@@ -1,0 +1,5 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": ["/home/dlipin/.local/share/nvim/lazy/nui.nvim/", "/home/dlipin/.local/share/nvim/lazy/nui.nvim/lua/"],
+  "hint.enable": false
+}
