@@ -26,6 +26,7 @@ function Todoist:queryTodayTasks(callback)
     ["filter"] = "today",
   }
   local res = curl.get(tasksUrl, { headers = headers, query = params, callback = callback })
+  return res
 end
 
 local M = {}

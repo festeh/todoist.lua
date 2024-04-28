@@ -96,8 +96,13 @@ end
 
 local function initCallback(menu)
   return function(out)
-    local node = NuiTree.Node({ text = "Loaded", id = "loadedsd", _id = "dff", _initialized = true })
+    local body = out.body
+    local decoded = vim.fn.json_decode(body)
+    print(vim.inspect(decoded))
+    local node = NuiTree.Node({ text = "Loaded sneaky", _id = "dff", _type = "item" })
     menu.tree:add_node(node)
+    menu.tree:render()
+    return node
   end
 end
 
@@ -112,13 +117,13 @@ function M.main()
   local ui = initUI()
   local callback = initCallback(ui.tasks)
   ui.layout:mount()
-  todoist:queryTodayTasks(callback)
-  local node = NuiTree.Node({ text = "Loaded", id = "loadedsd", _id = "ssdff" })
+  local res = todoist:queryTodayTasks(vim.schedule_wrap(callback))
+  local node = NuiTree.Node({ text = "Loaded", id = "loadedsd", _id = "ssdff", _type = "item" })
   ui.tasks.tree:add_node(node)
   print("Done 2")
   -- ui.tasks:unmount()
   ui.tasks.tree:render()
-  ui.tasks:mount()
+  -- ui.tasks:mount()
 end
 
 return M
