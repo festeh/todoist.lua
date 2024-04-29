@@ -4,7 +4,18 @@ local Menu = require("nui.menu")
 local Todoist = require("todoist.todoist")
 local NuiTree = require("nui.tree")
 
-local function menuComponent()
+local function statusComponent()
+  local popup_options = {
+    border = {
+      style = "rounded",
+    },
+    focusable = false,
+  }
+  local popup = Popup(popup_options)
+  return popup
+end
+
+local function menuComponent(on_change)
   local popup_options = {
     relative = "win",
     border = {
@@ -31,17 +42,21 @@ local function menuComponent()
       close = { "<Esc>", "<C-c>" },
       submit = { "<CR>", "<Space>" },
     },
+    win_options = {
+      winhighlight = "Normal:Normal",
+    },
     on_close = function()
       print("CLOSED")
     end,
     on_submit = function(item)
       print("SUBMITTED", vim.inspect(item))
-    end
+    end,
+    on_change = on_change,
   })
   return menu
 end
 
-local function tasksComponent()
+local function tasksComponent(onChange)
   local popup_options = {
     relative = "win",
     border = {
@@ -72,24 +87,57 @@ local function tasksComponent()
     end,
     on_submit = function(item)
       print("SUBMITTED", vim.inspect(item))
-    end
+    end,
+    on_change = onChange,
   })
   return menu
 end
 
+local function prepareOnMenuChange(todoist, status, tasks)
+  return function(item, menu)
+    vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, { "Selected: " .. item.text })
+    print(vim.inspect(todoist))
+    local filter = item.text == "Today" and "today" or "overdue"
+    todoist:queryTasks({ filter = filter }, vim.schedule_wrap(function(out)
+      local body = out.body
+      local decoded = vim.fn.json_decode(body)
+      local nodes = {}
+      for _, task in ipairs(decoded) do
+        table.insert(nodes, NuiTree.Node({ text = task.content, _id = task.id, _type = "item" }))
+      end
+      tasks.tree:set_nodes(nodes)
+      tasks.tree:render()
+    end))
+  end
+end
 
-local function initUI()
-  local menu = menuComponent()
-  local tasks = tasksComponent()
+local function prepareOnTaskChange(status)
+  return function(item, menu)
+    vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, { "Selected Task: " .. item.text })
+  end
+end
+
+local function initUI(todoist)
+  local status = statusComponent()
+  local tasks = tasksComponent(prepareOnTaskChange(status))
+  local menu = menuComponent(prepareOnMenuChange(todoist, status, tasks))
+  local upperRow = { Layout.Box(menu, { size = "20%" }), Layout.Box(tasks, { size = "80%" }) }
+
   local layout = Layout(
     {
       position = "0%",
       size = {
-        width = "98%",
-        height = "98%",
+        width = "100%",
+        height = "100%",
       },
     },
-    Layout.Box({ Layout.Box(menu, { size = '20%' }), Layout.Box(tasks, { size = "80%" }) }, { dir = "row" })
+    Layout.Box(
+      {
+        Layout.Box(upperRow, { size = "85%", dir = "row" }),
+        Layout.Box(status, { size = "15%" }),
+      },
+      { dir = "col" }
+    )
   )
   return { menu = menu, tasks = tasks, layout = layout }
 end
@@ -109,15 +157,16 @@ end
 local M = {}
 
 function M.main()
-  local todoist = Todoist.init()
+  local todoist = Todoist.initTodoist()
   if todoist == nil then
     print("Failed to initialize Todoist")
     return
   end
-  local ui = initUI()
+  print(vim.inspect(todoist))
+  local ui = initUI(todoist)
   local callback = initCallback(ui.tasks)
   ui.layout:mount()
-  local res = todoist:queryTodayTasks(vim.schedule_wrap(callback))
+  -- local res = todoist:queryTasks(vim.schedule_wrap(callback))
   local node = NuiTree.Node({ text = "Loaded", id = "loadedsd", _id = "ssdff", _type = "item" })
   ui.tasks.tree:add_node(node)
   print("Done 2")

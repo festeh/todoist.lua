@@ -15,33 +15,32 @@ local tasksUrl = "https://api.todoist.com/rest/v2/tasks"
 
 Todoist = {
   todayTasks = {},
+  overdueTasks = {},
 }
-Todoist.__index = Todoist
 
-function Todoist:queryTodayTasks(callback)
+function Todoist:queryTasks(query, callback)
+  print("Token: " .. self.token)
   local headers = {
     ["Authorization "] = "Bearer " .. self.token,
   }
-  local params = {
-    ["filter"] = "today",
-  }
-  local res = curl.get(tasksUrl, { headers = headers, query = params, callback = callback })
+  local res = curl.get(tasksUrl, { headers = headers, query = query, callback = callback })
   return res
 end
 
 local M = {}
 
-M.init = function()
+M.initTodoist = function()
   local token = getApiKey()
   if token == nil then
     print("Failed to initialize Todoist - token not set")
     return nil
   end
   -- Return a new instance of Todoist
-  local todoist = setmetatable({}, Todoist)
-  -- set the token
-  todoist.token = token
-  return todoist
+  Todoist.__index = Todoist
+  local self = setmetatable({}, Todoist)
+  self.token = token
+
+  return self
 end
 
 return M
