@@ -19,7 +19,6 @@ Todoist = {
 }
 
 function Todoist:queryTasks(query, callback)
-  print("Token: " .. self.token)
   local headers = {
     ["Authorization "] = "Bearer " .. self.token,
   }
@@ -35,11 +34,9 @@ M.initTodoist = function()
     print("Failed to initialize Todoist - token not set")
     return nil
   end
-  -- Return a new instance of Todoist
   Todoist.__index = Todoist
   local self = setmetatable({}, Todoist)
   self.token = token
-
   return self
 end
 
