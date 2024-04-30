@@ -5,16 +5,22 @@ local Todoist = require("todoist.todoist")
 local NuiTree = require("nui.tree")
 local Input = require("nui.input")
 
-local function InputComponent()
+local function inputComponent()
   local popup_options = {
-    relative = "cursor",
+    position = "50%",
+    zindex = 1000,
+    size = {
+      width = 100,
+    },
     border = {
       style = "rounded",
-    },
-    focusable = true,
+      text = {
+        top = "[New Name]",
+        top_align = "center",
+      },
+    }
   }
   local input = Input(popup_options, {
-    prompt = "Enter your task",
     default_value = "New Task",
     on_close = function()
       print("CLOSED")
@@ -79,7 +85,7 @@ local function menuComponent(on_change)
   return menu
 end
 
-local function tasksComponent(onChange)
+local function tasksComponent(input, onChange)
   local popup_options = {
     relative = "win",
     enter = false,
@@ -111,6 +117,13 @@ local function tasksComponent(onChange)
     end,
     on_change = onChange,
   })
+  menu:map("n", "e", function()
+    if menu.selected == nil then
+      return
+    end
+    input._.default_value = menu.selected.text
+    input:mount()
+  end, { nowait = true, noremap = true })
   return menu
 end
 
@@ -144,8 +157,9 @@ local function prepareOnTaskChange(status)
 end
 
 local function initUI(todoist)
+  local input = inputComponent()
   local status = statusComponent()
-  local tasks = tasksComponent(prepareOnTaskChange(status))
+  local tasks = tasksComponent(input, prepareOnTaskChange(status))
   tasks.selected = nil
   local menu = menuComponent(prepareOnMenuChange(todoist, status, tasks))
   tasks:map("n", " ", function()
@@ -154,7 +168,6 @@ local function initUI(todoist)
     end
     updateStatus(status, "Task: " .. tasks.selected.text)
   end, { nowait = true, noremap = true })
-  tasks.map("n", "")
   local upperRow = { Layout.Box(menu, { size = "20%" }), Layout.Box(tasks, { size = "80%" }) }
 
   local layout = Layout(
