@@ -2,6 +2,7 @@ local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local Menu = require("nui.menu")
 local Todoist = require("todoist.todoist")
+local State = require("todoist.state")
 local NuiTree = require("nui.tree")
 local Input = require("nui.input")
 
@@ -85,7 +86,7 @@ local function menuComponent(on_change)
   return menu
 end
 
-local function tasksComponent(input, onChange)
+local function tasksComponent(state, input, onChange)
   local popup_options = {
     relative = "win",
     enter = false,
@@ -117,11 +118,16 @@ local function tasksComponent(input, onChange)
     end,
     on_change = onChange,
   })
-  menu:map("n", "e", function()
-    if menu.selected == nil then
+  menu:map("n", "r", function()
+    if state.menu ~= "overdue" or state.selectedTask == nil then
       return
     end
-    input._.default_value = menu.selected.text
+  end, { nowait = true, noremap = true })
+  menu:map("n", "e", function()
+    if state.selectedTask == nil then
+      return
+    end
+    input._.default_value = state.selectedTask.text
     input:mount()
   end, { nowait = true, noremap = true })
   return menu
@@ -131,11 +137,12 @@ local function updateStatus(status, text)
   vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, { text })
 end
 
-local function prepareOnMenuChange(todoist, status, tasks)
+local function prepareOnMenuChange(state, todoist, status, tasks)
   return function(item, menu)
-    updateStatus(status, "Selected Menu: " .. item.text)
-    print(vim.inspect(todoist))
+    updateStatus(status, state:repr())
     local filter = item.text == "Today" and "today" or "overdue"
+    state.menu = filter
+    state.selectedTask = nil
     todoist:queryTasks({ filter = filter }, vim.schedule_wrap(function(out)
       local body = out.body
       local decoded = vim.fn.json_decode(body)
@@ -146,27 +153,28 @@ local function prepareOnMenuChange(todoist, status, tasks)
       tasks.tree:set_nodes(nodes)
       tasks.tree:render()
     end))
+    updateStatus(status, state:repr())
   end
 end
 
-local function prepareOnTaskChange(status)
+local function prepareOnTaskChange(state, status)
   return function(item, menu)
-    vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, { "Selected Task: " .. item.text })
-    menu.selected = item
+    state.selectedTask = item
+    vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, {state:repr()})
   end
 end
 
 local function initUI(todoist)
+  local state = State.init()
   local input = inputComponent()
   local status = statusComponent()
-  local tasks = tasksComponent(input, prepareOnTaskChange(status))
-  tasks.selected = nil
-  local menu = menuComponent(prepareOnMenuChange(todoist, status, tasks))
+  local tasks = tasksComponent(state, input, prepareOnTaskChange(state, status))
+  local menu = menuComponent(prepareOnMenuChange(state, todoist, status, tasks))
   tasks:map("n", " ", function()
-    if tasks.selected == nil then
+    if state.selectedTask == nil then
       return
     end
-    updateStatus(status, "Task: " .. tasks.selected.text)
+    updateStatus(status, state:repr())
   end, { nowait = true, noremap = true })
   local upperRow = { Layout.Box(menu, { size = "20%" }), Layout.Box(tasks, { size = "80%" }) }
 

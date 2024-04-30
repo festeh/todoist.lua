@@ -4,5 +4,5 @@
                         "~/.local/share/nvim/lazy/plenary.nvim/",
                         "~/Projects/todoist_lua",
                         ],
-  "hint.enable": false
+  "hint.enable": true
 }
