@@ -3,6 +3,28 @@ local Popup = require("nui.popup")
 local Menu = require("nui.menu")
 local Todoist = require("todoist.todoist")
 local NuiTree = require("nui.tree")
+local Input = require("nui.input")
+
+local function InputComponent()
+  local popup_options = {
+    relative = "cursor",
+    border = {
+      style = "rounded",
+    },
+    focusable = true,
+  }
+  local input = Input(popup_options, {
+    prompt = "Enter your task",
+    default_value = "New Task",
+    on_close = function()
+      print("CLOSED")
+    end,
+    on_submit = function(item)
+      print("SUBMITTED", vim.inspect(item))
+    end,
+  })
+  return input
+end
 
 local function statusComponent()
   local popup_options = {
@@ -132,6 +154,7 @@ local function initUI(todoist)
     end
     updateStatus(status, "Task: " .. tasks.selected.text)
   end, { nowait = true, noremap = true })
+  tasks.map("n", "")
   local upperRow = { Layout.Box(menu, { size = "20%" }), Layout.Box(tasks, { size = "80%" }) }
 
   local layout = Layout(
