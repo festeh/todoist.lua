@@ -86,7 +86,7 @@ local function menuComponent(on_change)
   return menu
 end
 
-local function tasksComponent(state, input, onChange)
+local function tasksComponent(state, todoist, input, onChange)
   local popup_options = {
     relative = "win",
     enter = false,
@@ -120,7 +120,14 @@ local function tasksComponent(state, input, onChange)
   })
   menu:map("n", "r", function()
     if state.menu ~= "overdue" or state.selectedTask == nil then
+      vim.notify("No task selected or wrong menu")
       return
+    end
+    local res = todoist:rescheduleTask(state.selectedTask._id, "today")
+    if res.status == 200 then
+      menu.tree:remove_node(state.selectedTask._id)
+      menu.tree:render()
+      state:setSelectedTask(nil)
     end
   end, { nowait = true, noremap = true })
   menu:map("n", "e", function()
@@ -133,16 +140,12 @@ local function tasksComponent(state, input, onChange)
   return menu
 end
 
-local function updateStatus(status, text)
-  vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, { text })
-end
 
-local function prepareOnMenuChange(state, todoist, status, tasks)
+local function prepareOnMenuChange(state, todoist, tasks)
   return function(item, menu)
-    updateStatus(status, state:repr())
     local filter = item.text == "Today" and "today" or "overdue"
-    state.menu = filter
-    state.selectedTask = nil
+    state:setMenu(item.text)
+    state:setSelectedTask(nil)
     todoist:queryTasks({ filter = filter }, vim.schedule_wrap(function(out)
       local body = out.body
       local decoded = vim.fn.json_decode(body)
@@ -153,28 +156,25 @@ local function prepareOnMenuChange(state, todoist, status, tasks)
       tasks.tree:set_nodes(nodes)
       tasks.tree:render()
     end))
-    updateStatus(status, state:repr())
   end
 end
 
-local function prepareOnTaskChange(state, status)
+local function prepareOnTaskChange(state)
   return function(item, menu)
-    state.selectedTask = item
-    vim.api.nvim_buf_set_lines(status.bufnr, 0, -1, false, {state:repr()})
+    state:setSelectedTask(item)
   end
 end
 
 local function initUI(todoist)
-  local state = State.init()
-  local input = inputComponent()
   local status = statusComponent()
-  local tasks = tasksComponent(state, input, prepareOnTaskChange(state, status))
-  local menu = menuComponent(prepareOnMenuChange(state, todoist, status, tasks))
+  local state = State.init(status)
+  local input = inputComponent()
+  local tasks = tasksComponent(state, todoist, input, prepareOnTaskChange(state))
+  local menu = menuComponent(prepareOnMenuChange(state, todoist, tasks))
   tasks:map("n", " ", function()
     if state.selectedTask == nil then
       return
     end
-    updateStatus(status, state:repr())
   end, { nowait = true, noremap = true })
   local upperRow = { Layout.Box(menu, { size = "20%" }), Layout.Box(tasks, { size = "80%" }) }
 

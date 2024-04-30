@@ -26,6 +26,16 @@ function Todoist:queryTasks(query, callback)
   return res
 end
 
+function Todoist:rescheduleTask(taskId, newDate)
+  local headers = {
+    ["Authorization "] = "Bearer " .. self.token,
+    ["Content-Type"] = "application/json",
+  }
+  local body = vim.fn.json_encode({ due_string = newDate })
+  local res = curl.post(tasksUrl .. "/" .. taskId, { headers = headers, body = body })
+  return res
+end
+
 local M = {}
 
 M.initTodoist = function()
