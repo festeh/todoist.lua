@@ -1,10 +1,8 @@
 local curl = require("plenary.curl")
 
 local function getApiKey()
-  -- retrieve token from environment variable
   local token = os.getenv("TODOIST_API_KEY")
   if token == nil then
-    print("TODOIST_API_KEY environment variable not set")
     return nil
   end
   return token
@@ -41,7 +39,7 @@ local M = {}
 M.initTodoist = function()
   local token = getApiKey()
   if token == nil then
-    print("Failed to initialize Todoist - token not set")
+    print("Failed to initialize Todoist - TODOIST_API_KEY not set")
     return nil
   end
   Todoist.__index = Todoist
