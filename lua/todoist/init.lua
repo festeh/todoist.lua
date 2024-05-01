@@ -3,6 +3,7 @@ local Popup = require("nui.popup")
 local Menu = require("nui.menu")
 local Todoist = require("todoist.todoist")
 local State = require("todoist.state")
+local Request = require("todoist.request")
 local NuiTree = require("nui.tree")
 local Input = require("nui.input")
 
@@ -86,7 +87,9 @@ local function menuComponent(on_change)
   return menu
 end
 
-local function tasksComponent(state, todoist, input, onChange)
+--- @param state State
+--- @param todoist Todoist
+local function tasksComponent(state, todoist, taskInput, onChange)
   local popup_options = {
     relative = "win",
     enter = false,
@@ -118,13 +121,27 @@ local function tasksComponent(state, todoist, input, onChange)
     end,
     on_change = onChange,
   })
+  menu:map("n", "c", function()
+    if state.selectedTask == nil then
+      vim.notify("No task selected")
+      return
+    end
+    local res = todoist:completeTask(state.selectedTask._id)
+    if Request.is_success(res) then
+      menu.tree:remove_node(state.selectedTask._id)
+      menu.tree:render()
+      state:setSelectedTask(nil)
+    else
+      vim.notify("Failed to complete task")
+    end
+  end, { nowait = true, noremap = true })
   menu:map("n", "r", function()
     if state.menu ~= "overdue" or state.selectedTask == nil then
       vim.notify("No task selected or wrong menu")
       return
     end
     local res = todoist:rescheduleTask(state.selectedTask._id, "today")
-    if res.status == 200 then
+    if Request.is_success(res) then
       menu.tree:remove_node(state.selectedTask._id)
       menu.tree:render()
       state:setSelectedTask(nil)
@@ -134,8 +151,8 @@ local function tasksComponent(state, todoist, input, onChange)
     if state.selectedTask == nil then
       return
     end
-    input._.default_value = state.selectedTask.text
-    input:mount()
+    taskInput._.default_value = state.selectedTask.text
+    taskInput:mount()
   end, { nowait = true, noremap = true })
   return menu
 end
@@ -201,7 +218,7 @@ end
 local M = {}
 
 function M.main()
-  local todoist = Todoist.initTodoist()
+  local todoist = Todoist.init()
   if todoist == nil then
     print("Failed to initialize Todoist")
     return

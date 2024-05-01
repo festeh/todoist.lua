@@ -4,6 +4,7 @@ vim.api.nvim_command('set runtimepath^=~/.local/share/nvim/lazy/nui.nvim')
 package.loaded["todoist"] = nil
 package.loaded["todoist.todoist"] = nil
 package.loaded["todoist.state"] = nil
+package.loaded["todoist.request"] = nil
 local m = require("todoist")
 
 m.main()

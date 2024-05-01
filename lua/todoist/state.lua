@@ -1,3 +1,6 @@
+
+--- @class State
+--- @field status NuiPopup
 State = {
   selectedTask = nil,
   menu = nil,
