@@ -3,6 +3,10 @@ local Menu = require("nui.menu")
 local Input = require("nui.input")
 local Request = require("todoist.request")
 
+--- @class Tasks
+--- @field ui NuiMenu
+Tasks = {}
+
 local function inputComponent()
   local popup_options = {
     position = "50%",
@@ -30,11 +34,7 @@ local function inputComponent()
   return input
 end
 
-
-
---- @param state State
---- @param todoist Todoist
-local function init_ui(state, todoist, taskInput, onChange)
+local function init_ui(on_change)
   local popup_options = {
     relative = "win",
     enter = false,
@@ -59,70 +59,77 @@ local function init_ui(state, todoist, taskInput, onChange)
       close = { "<Esc>", "<C-c>" },
     },
     on_close = function()
-      print("CLOSED")
     end,
-    on_submit = function(item)
-      print("SUBMITTED", vim.inspect(item))
-    end,
-    on_change = onChange,
+    on_change = on_change,
   })
+  return menu
+end
+
+function Tasks:add_keybinds(state, todoist)
+  local menu = self.ui
+  -- back to main menu
+  menu:map("n", "h", function()
+    vim.api.nvim_set_current_win(state.main_window_id)
+  end, { nowait = true, noremap = true })
+  -- reschedule task to today
+  menu:map("n", "r", function()
+    if state.selected_task == nil then
+      vim.notify("No task selected or wrong menu")
+      return
+    end
+    -- TODO: custom reschedule?
+    local res = todoist:rescheduleTask(state.selected_task._id, "today")
+    if Request.is_success(res) then
+      menu.tree:remove_node(state.selected_task._id)
+      menu.tree:render()
+      state:set_selected_task(nil)
+    end
+  end, { nowait = true, noremap = true })
+  -- edit task name
+  menu:map("n", "e", function()
+    if state.selected_task == nil then
+      return
+    end
+    -- TODO: implement
+    taskInput._.default_value = state.selected_task.text
+    taskInput:mount()
+  end, { nowait = true, noremap = true })
+  -- complete task
   menu:map("n", "c", function()
-    if state.selectedTask == nil then
+    if state.selected_task == nil then
       vim.notify("No task selected")
       return
     end
-    local res = todoist:completeTask(state.selectedTask._id)
+    local res = todoist:completeTask(state.selected_task._id)
     if Request.is_success(res) then
-      menu.tree:remove_node(state.selectedTask._id)
+      menu.tree:remove_node(state.selected_task._id)
       menu.tree:render()
-      state:setSelectedTask(nil)
+      state:set_selected_task(nil)
     else
       vim.notify("Failed to complete task")
     end
   end, { nowait = true, noremap = true })
-  menu:map("n", "r", function()
-    if state.menu ~= "overdue" or state.selectedTask == nil then
-      vim.notify("No task selected or wrong menu")
-      return
-    end
-    local res = todoist:rescheduleTask(state.selectedTask._id, "today")
-    if Request.is_success(res) then
-      menu.tree:remove_node(state.selectedTask._id)
-      menu.tree:render()
-      state:setSelectedTask(nil)
-    end
-  end, { nowait = true, noremap = true })
-  menu:map("n", "e", function()
-    if state.selectedTask == nil then
-      return
-    end
-    taskInput._.default_value = state.selectedTask.text
-    taskInput:mount()
-  end, { nowait = true, noremap = true })
-  return menu
 end
 
-
-local function prepareOnTaskChange(state)
-  return function(item, menu)
-    state:setSelectedTask(item)
+local function prepare_on_change(state)
+  return function(item, _)
+    state:set_selected_task(item)
   end
 end
-
---- @class Tasks
-Tasks = {}
-
-local M = {}
 
 --- @class TasksParams
 --- @field state State
 --- @field todoist Todoist
 
+local M = {}
+
 --- @param params TasksParams
 M.init = function(params)
   local self = setmetatable({}, Tasks)
-  local ui = init_ui(params.state, params.todoist, inputComponent(), prepareOnTaskChange(params.state))
+  Tasks.__index = Tasks
+  local ui = init_ui(prepare_on_change(params.state))
   self.ui = ui
+  self:add_keybinds(params.state, params.todoist)
   return self
 end
 

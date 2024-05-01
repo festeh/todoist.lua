@@ -39,7 +39,7 @@ local function init_ui(todoist)
       { dir = "col" }
     )
   )
-  return { main_menu = main_menu, tasks = tasks, layout = layout }
+  return { main_menu = main_menu, tasks = tasks, layout = layout, state = state }
 end
 
 
@@ -53,6 +53,9 @@ function M.main()
   end
   local ui = init_ui(todoist)
   ui.layout:mount()
+  local state = ui.state
+  state.main_window_id = ui.main_menu.ui.winid
+  state.task_window_id = ui.tasks.ui.winid
 end
 
 return M

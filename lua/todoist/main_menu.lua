@@ -4,8 +4,8 @@ local NuiTree = require("nui.tree")
 local function prepareOnMenuChange(state, todoist, tasks)
   return function(item, menu)
     local filter = item.text == "Today" and "today" or "overdue"
-    state:setMenu(item.text)
-    state:setSelectedTask(nil)
+    state:set_menu(item.text)
+    state:set_selected_task(nil)
     todoist:queryTasks({ filter = filter }, vim.schedule_wrap(function(out)
       local body = out.body
       local decoded = vim.fn.json_decode(body)
@@ -56,6 +56,14 @@ local function init_ui(on_change)
   return menu
 end
 
+--- @param menu NuiMenu
+--- @param state State
+local function add_keybinds(menu, state)
+  menu:map("n", "l", function()
+    vim.api.nvim_set_current_win(state.task_window_id)
+  end)
+end
+
 --- @class MainMenu
 --- @field ui NuiMenu
 MainMenu = {
@@ -75,6 +83,7 @@ M.init = function(params)
   local self = setmetatable({}, MainMenu)
   local on_change = prepareOnMenuChange(params.state, params.todoist, params.tasks)
   self.ui = init_ui(on_change)
+  add_keybinds(self.ui, params.state)
   return self
 end
 
