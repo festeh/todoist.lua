@@ -5,9 +5,10 @@ local Request = require("todoist.request")
 
 --- @class Tasks
 --- @field ui NuiMenu
+--- @field task_input NuiInput
 Tasks = {}
 
-local function inputComponent()
+local function task_input()
   local popup_options = {
     position = "50%",
     zindex = 1000,
@@ -129,6 +130,7 @@ M.init = function(params)
   Tasks.__index = Tasks
   local ui = init_ui(prepare_on_change(params.state))
   self.ui = ui
+  self.task_input = task_input()
   self:add_keybinds(params.state, params.todoist)
   return self
 end

@@ -61,6 +61,7 @@ end
 local function add_keybinds(menu, state)
   menu:map("n", "l", function()
     vim.api.nvim_set_current_win(state.task_window_id)
+    vim.api.nvim_win_set_cursor(state.task_window_id, { 1, 0 })
   end)
 end
 
