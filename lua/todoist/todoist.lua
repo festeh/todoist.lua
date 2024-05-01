@@ -1,6 +1,13 @@
 local curl = require("plenary.curl")
 
-local function getApiKey()
+--- @class Todoist
+--- @field token string
+Todoist = {
+  todayTasks = {},
+  overdueTasks = {},
+}
+
+local function get_api_key()
   local token = os.getenv("TODOIST_API_KEY")
   if token == nil then
     return nil
@@ -10,13 +17,8 @@ end
 
 local tasksUrl = "https://api.todoist.com/rest/v2/tasks"
 
---- @class Todoist
-Todoist = {
-  todayTasks = {},
-  overdueTasks = {},
-}
 
-function Todoist:_getHeaders(hasJsonBody)
+function Todoist:_get_headers(hasJsonBody)
   local headers = {
     ["Authorization "] = "Bearer " .. self.token,
   }
@@ -26,30 +28,32 @@ function Todoist:_getHeaders(hasJsonBody)
   return headers
 end
 
-function Todoist:queryTasks(query, callback)
-  local headers = self:_getHeaders(false)
+function Todoist:query_tasks(query, callback)
+  local headers = self:_get_headers(false)
   local res = curl.get(tasksUrl, { headers = headers, query = query, callback = callback })
   return res
 end
 
-function Todoist:rescheduleTask(taskId, newDate)
-  local headers = self:_getHeaders(true)
-  local body = vim.fn.json_encode({ due_string = newDate })
-  local res = curl.post(tasksUrl .. "/" .. taskId, { headers = headers, body = body })
+function Todoist:complete(id)
+  local headers = self:_get_headers(false)
+  local url = tasksUrl .. "/" .. id .. "/close"
+  local res = curl.post(url, { headers = headers })
   return res
 end
 
-function Todoist:completeTask(taskId)
-  local headers = self:_getHeaders(false)
-  local url = tasksUrl .. "/" .. taskId .. "/close"
-  local res = curl.post(url, { headers = headers })
+--- @param id string
+--- @param params table
+function Todoist:update(id, params)
+  local headers = self:_get_headers(true)
+  local body = vim.fn.json_encode(params)
+  local res = curl.post(tasksUrl .. "/" .. id, { headers = headers, body = body })
   return res
 end
 
 local M = {}
 
 M.init = function()
-  local token = getApiKey()
+  local token = get_api_key()
   if token == nil then
     print("Failed to initialize Todoist - TODOIST_API_KEY not set")
     return nil

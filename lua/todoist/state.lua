@@ -35,6 +35,12 @@ function State:set_menu(menu)
   self:_update_status()
 end
 
+function State:extract_last_input()
+  local input = self.last_input
+  self.last_input = ""
+  return input
+end
+
 function M.init(status)
   State.__index = State
   local self = setmetatable({status = status}, State)

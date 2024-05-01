@@ -1,12 +1,12 @@
 local Menu = require("nui.menu")
 local NuiTree = require("nui.tree")
 
-local function prepareOnMenuChange(state, todoist, tasks)
+local function prepare_on_change(state, todoist, tasks)
   return function(item, menu)
     local filter = item.text == "Today" and "today" or "overdue"
     state:set_menu(item.text)
     state:set_selected_task(nil)
-    todoist:queryTasks({ filter = filter }, vim.schedule_wrap(function(out)
+    todoist:query_tasks({ filter = filter }, vim.schedule_wrap(function(out)
       local body = out.body
       local decoded = vim.fn.json_decode(body)
       local nodes = {}
@@ -82,7 +82,7 @@ local M = {}
 --- @return MainMenu
 M.init = function(params)
   local self = setmetatable({}, MainMenu)
-  local on_change = prepareOnMenuChange(params.state, params.todoist, params.tasks)
+  local on_change = prepare_on_change(params.state, params.todoist, params.tasks)
   self.ui = init_ui(on_change)
   add_keybinds(self.ui, params.state)
   return self
