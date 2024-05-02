@@ -129,8 +129,8 @@ function Tasks:prepare_on_submit_new_task()
   end
 end
 
-function Tasks:reload(filter)
-  self.todoist:query_tasks({ filter = filter }, vim.schedule_wrap(function(out)
+function Tasks:reload(query)
+  self.todoist:query_tasks(query, vim.schedule_wrap(function(out)
     local body = out.body
     local decoded = vim.fn.json_decode(body)
     local nodes = {}

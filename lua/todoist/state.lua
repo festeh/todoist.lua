@@ -15,7 +15,7 @@ local M = {}
 
 function State:repr()
   local task_str = self.selected_task and self.selected_task.content or "None"
-  local menu = self.menu or "None"
+  local menu = (self.menu and self.menu.text) or "None"
   return string.format("State(selected_task=%s, menu=%s)", task_str, menu)
 end
 

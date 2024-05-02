@@ -1,7 +1,9 @@
 local Menu = require("nui.menu")
+local NuiTree = require("nui.tree")
 
 --- @class MainMenu
 --- @field ui NuiMenu
+--- @field todoist Todoist
 MainMenu = {
 
 }
@@ -9,14 +11,14 @@ MainMenu = {
 --- @param tasks_menu Tasks
 local function prepare_on_change(state, tasks_menu)
   return function(item, menu)
-    local filter = item.text == "Today" and "today" or "overdue"
-    state:set_menu(filter)
+    state:set_menu(item)
     state:set_selected_task(nil)
-    tasks_menu:reload(filter)
+    tasks_menu:reload(item.query)
   end
 end
 
-local function init_ui(on_change)
+
+function MainMenu:init_ui(on_change)
   local popup_options = {
     relative = "win",
     enter = true,
@@ -34,8 +36,8 @@ local function init_ui(on_change)
 
   local menu = Menu(popup_options, {
     lines = {
-      Menu.item("Today"),
-      Menu.item("Outdated"),
+      Menu.item("Today", { query = { filter = "today" } }),
+      Menu.item("Outdated", { query = { filter = "overdue" } }),
     },
     max_width = 20,
     keymap = {
@@ -80,7 +82,17 @@ M.init = function(params)
   local self = setmetatable({}, MainMenu)
   MainMenu.__index = MainMenu
   local on_change = prepare_on_change(params.state, params.tasks)
-  self.ui = init_ui(on_change)
+  self.todoist = params.todoist
+  self.ui = self:init_ui(on_change)
+  self.todoist:query_projects(vim.schedule_wrap(function(projects)
+    local body = projects.body
+    local data = vim.fn.json_decode(body)
+    for _, project in ipairs(data) do
+      local node = NuiTree.Node({ _id = project.id, text = project.name, _type = "item", query = { project_id = project.id } })
+      self.ui.tree:add_node(node)
+    end
+    self.ui.tree:render()
+  end))
   self:add_keybinds(params)
   return self
 end
