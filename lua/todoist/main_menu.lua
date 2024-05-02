@@ -1,5 +1,10 @@
 local Menu = require("nui.menu")
 
+--- @class MainMenu
+--- @field ui NuiMenu
+MainMenu = {
+
+}
 --- @param state State
 --- @param tasks_menu Tasks
 local function prepare_on_change(state, tasks_menu)
@@ -48,20 +53,19 @@ local function init_ui(on_change)
   return menu
 end
 
---- @param menu NuiMenu
---- @param state State
-local function add_keybinds(menu, state)
+--- @param params Params
+function MainMenu:add_keybinds(params)
+  local state = params.state
+  local tasks = params.tasks
+  local menu = self.ui
   menu:map("n", "l", function()
     vim.api.nvim_set_current_win(state.task_window_id)
-    vim.api.nvim_win_set_cursor(state.task_window_id, { 1, 0 })
+    local linenr = 1
+    vim.api.nvim_win_set_cursor(state.task_window_id, { linenr, 0 })
+    local node, target_linenr = tasks.ui.tree:get_node(linenr)
+    tasks.ui._.on_change(node)
   end)
 end
-
---- @class MainMenu
---- @field ui NuiMenu
-MainMenu = {
-
-}
 
 local M = {}
 
@@ -74,9 +78,10 @@ local M = {}
 --- @return MainMenu
 M.init = function(params)
   local self = setmetatable({}, MainMenu)
+  MainMenu.__index = MainMenu
   local on_change = prepare_on_change(params.state, params.tasks)
   self.ui = init_ui(on_change)
-  add_keybinds(self.ui, params.state)
+  self:add_keybinds(params)
   return self
 end
 
