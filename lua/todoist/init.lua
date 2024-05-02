@@ -20,7 +20,7 @@ local function init_ui(todoist)
   local status = status_component()
   local state = State.init(status)
   local tasks = Tasks.init({ state = state, todoist = todoist })
-  local main_menu = MainMenu.init({ state = state, todoist = todoist, tasks = tasks.ui})
+  local main_menu = MainMenu.init({ state = state, todoist = todoist, tasks = tasks})
   local upperRow = { Layout.Box(main_menu.ui, { size = "20%" }), Layout.Box(tasks.ui, { size = "80%" }) }
 
   local layout = Layout(

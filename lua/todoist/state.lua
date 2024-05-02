@@ -1,8 +1,9 @@
 
 --- @class State
 --- @field status NuiPopup
---- @field main_window_id number
---- @field task_window_id number
+--- @field main_window_id number | nil
+--- @field task_window_id number | nil
+--- @field selected_task Task | nil
 State = {
   selected_task = nil,
   menu = nil,
@@ -13,9 +14,9 @@ State = {
 local M = {}
 
 function State:repr()
-  local task = (self.selected_task and self.selected_task.text) or "None"
+  local task_str = self.selected_task and self.selected_task.content or "None"
   local menu = self.menu or "None"
-  return string.format("State(selectedTask=%s, menu=%s)", task, menu)
+  return string.format("State(selected_task=%s, menu=%s)", task_str, menu)
 end
 
 function State:_update_status()
@@ -25,6 +26,7 @@ function State:_update_status()
   vim.api.nvim_buf_set_lines(self.status.bufnr, 0, -1, false, { self:repr() })
 end
 
+--- @param task Task | nil
 function State:set_selected_task(task)
   self.selected_task = task
   self:_update_status()

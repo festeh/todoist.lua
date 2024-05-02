@@ -1,6 +1,8 @@
 local Menu = require("nui.menu")
 local Request = require("todoist.request")
 local InputMenu = require("todoist.input_menu")
+local NuiTree = require("nui.tree")
+local Task = require("todoist.task")
 
 --- @class Tasks
 --- @field ui NuiMenu
@@ -55,7 +57,7 @@ function Tasks:add_keybinds()
       vim.notify("No task selected or wrong menu")
       return
     end
-    local id = state.selected_task._id
+    local id = state.selected_task.id
     -- TODO: custom reschedule?
     local res = todoist:update(id, { due_string = "today" })
     if Request.is_success(res) then
@@ -70,7 +72,7 @@ function Tasks:add_keybinds()
       vim.notify("No task selected")
       return
     end
-    self.task_input._.default_value = state.selected_task.text
+    self.task_input._.default_value = state.selected_task.content
     self.task_input:mount()
   end, { nowait = true, noremap = true })
   -- complete task
@@ -79,9 +81,9 @@ function Tasks:add_keybinds()
       vim.notify("No task selected")
       return
     end
-    local res = todoist:complete(state.selected_task._id)
+    local res = todoist:complete(state.selected_task.id)
     if Request.is_success(res) then
-      menu.tree:remove_node(state.selected_task._id)
+      menu.tree:remove_node(state.selected_task.id)
       menu.tree:render()
       state:set_selected_task(nil)
     else
@@ -91,20 +93,41 @@ function Tasks:add_keybinds()
 end
 
 function Tasks:prepare_on_submit_task_name()
+  local state = self.state
   return function(name)
-    local res = self.todoist:update(self.state.selected_task._id, { content = name })
+    local selected_task = state.selected_task
+    if selected_task == nil then
+      return
+    end
+    local res = self.todoist:update(selected_task.id, { content = name })
     if Request.is_success(res) then
-      self.state.set_selected_task(name)
-      self.ui.tree:render()
+      self:reload(self.state.menu)
+      vim.notify("Task renamed", "info", { title = "Success" })
+      state:set_selected_task(Task.init({ content = name, id = selected_task.id }))
     else
       vim.notify("Failed to rename a task")
     end
   end
 end
 
+function Tasks:reload(filter)
+  self.todoist:query_tasks({ filter = filter }, vim.schedule_wrap(function(out)
+    local body = out.body
+    local decoded = vim.fn.json_decode(body)
+    local nodes = {}
+    for _, task in ipairs(decoded) do
+      table.insert(nodes, NuiTree.Node({ text = task.content, _id = task.id, _type = "item" }))
+    end
+    self.ui.tree:set_nodes(nodes)
+    self.ui.tree:render()
+  end))
+end
+
 local function prepare_on_change(state)
   return function(item, _)
-    state:set_selected_task(item)
+    vim.notify(item.text, "info", { title = "Selected" })
+    local params = { content = item.text, id = item._id }
+    state:set_selected_task(Task.init(params))
   end
 end
 

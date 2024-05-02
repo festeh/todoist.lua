@@ -15,7 +15,7 @@ local function get_api_key()
   return token
 end
 
-local tasksUrl = "https://api.todoist.com/rest/v2/tasks"
+local TASKS_URL = "https://api.todoist.com/rest/v2/tasks"
 
 
 function Todoist:_get_headers(hasJsonBody)
@@ -30,13 +30,14 @@ end
 
 function Todoist:query_tasks(query, callback)
   local headers = self:_get_headers(false)
-  local res = curl.get(tasksUrl, { headers = headers, query = query, callback = callback })
+  local res = curl.get(TASKS_URL, { headers = headers, query = query, callback = callback })
   return res
 end
 
+--- @param id string
 function Todoist:complete(id)
   local headers = self:_get_headers(false)
-  local url = tasksUrl .. "/" .. id .. "/close"
+  local url = TASKS_URL .. "/" .. id .. "/close"
   local res = curl.post(url, { headers = headers })
   return res
 end
@@ -46,7 +47,7 @@ end
 function Todoist:update(id, params)
   local headers = self:_get_headers(true)
   local body = vim.fn.json_encode(params)
-  local res = curl.post(tasksUrl .. "/" .. id, { headers = headers, body = body })
+  local res = curl.post(TASKS_URL .. "/" .. id, { headers = headers, body = body })
   return res
 end
 
