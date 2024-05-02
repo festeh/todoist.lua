@@ -4,6 +4,7 @@
 --- @field main_window_id number | nil
 --- @field task_window_id number | nil
 --- @field selected_task Task | nil
+--- @field menu table | nil
 State = {
   selected_task = nil,
   menu = nil,
@@ -33,8 +34,13 @@ function State:set_selected_task(task)
 end
 
 function State:new_task_context()
-  if self.menu == "today" then
-    return { due_string = "today" }
+  if self.menu.type == "date" then
+    if self.menu.query.due_string == "today" then
+      return self.menu.query
+    end
+  end
+  if self.menu.type == "project" then
+    return self.menu.query
   end
   return {}
 end

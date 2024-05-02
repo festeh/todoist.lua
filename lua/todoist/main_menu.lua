@@ -36,8 +36,8 @@ function MainMenu:init_ui(on_change)
 
   local menu = Menu(popup_options, {
     lines = {
-      Menu.item("Today", { query = { filter = "today" } }),
-      Menu.item("Outdated", { query = { filter = "overdue" } }),
+      Menu.item("Today", { type = "date", query = { filter = "today" } }),
+      Menu.item("Outdated", { type = "date", query = { filter = "overdue" } }),
     },
     max_width = 20,
     keymap = {
@@ -74,7 +74,13 @@ function MainMenu:query_projects()
     local body = projects.body
     local data = vim.fn.json_decode(body)
     for _, project in ipairs(data) do
-      local node = NuiTree.Node({ _id = project.id, text = project.name, _type = "item", query = { project_id = project.id } })
+      local node = NuiTree.Node({
+        type = "project",
+        _id = project.id,
+        text = project.name,
+        _type = "item",
+        query = { project_id = project.id }
+      })
       self.ui.tree:add_node(node)
     end
     self.ui.tree:render()
