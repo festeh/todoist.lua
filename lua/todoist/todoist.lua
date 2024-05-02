@@ -42,6 +42,13 @@ function Todoist:complete(id)
   return res
 end
 
+function Todoist:new_task(params)
+  local headers = self:_get_headers(true)
+  local body = vim.fn.json_encode(params)
+  local res = curl.post(TASKS_URL, { headers = headers, body = body })
+  return res
+end
+
 --- @param id string
 --- @param params table
 function Todoist:update(id, params)

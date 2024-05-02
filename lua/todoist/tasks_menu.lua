@@ -6,7 +6,8 @@ local Task = require("todoist.task")
 
 --- @class Tasks
 --- @field ui NuiMenu
---- @field task_input NuiInput
+--- @field change_name_input NuiInput
+--- @field new_task_input NuiInput
 --- @field todoist Todoist
 --- @field state State
 Tasks = {}
@@ -72,8 +73,8 @@ function Tasks:add_keybinds()
       vim.notify("No task selected")
       return
     end
-    self.task_input._.default_value = state.selected_task.content
-    self.task_input:mount()
+    self.change_name_input._.default_value = state.selected_task.content
+    self.change_name_input:mount()
   end, { nowait = true, noremap = true })
   -- complete task
   menu:map("n", "c", function()
@@ -89,6 +90,10 @@ function Tasks:add_keybinds()
     else
       vim.notify("Failed to complete a task")
     end
+  end, { nowait = true, noremap = true })
+  -- add new task
+  menu:map("n", "a", function()
+    self.new_task_input:mount()
   end, { nowait = true, noremap = true })
 end
 
@@ -110,6 +115,20 @@ function Tasks:prepare_on_submit_task_name()
   end
 end
 
+function Tasks:prepare_on_submit_new_task()
+  local state = self.state
+  return function(name)
+    local context = state:new_task_context()
+    context = vim.tbl_extend("force", context, { content = name })
+    local res = self.todoist:new_task(context)
+    if Request.is_success(res) then
+      self:reload(self.state.menu)
+    else
+      vim.notify("Failed to create a task")
+    end
+  end
+end
+
 function Tasks:reload(filter)
   self.todoist:query_tasks({ filter = filter }, vim.schedule_wrap(function(out)
     local body = out.body
@@ -125,7 +144,6 @@ end
 
 local function prepare_on_change(state)
   return function(item, _)
-    vim.notify(item.text, "info", { title = "Selected" })
     local params = { content = item.text, id = item._id }
     state:set_selected_task(Task.init(params))
   end
@@ -145,7 +163,8 @@ M.init = function(params)
   self.ui = ui
   self.todoist = params.todoist
   self.state = params.state
-  self.task_input = InputMenu.init("[New Name]", self:prepare_on_submit_task_name())
+  self.change_name_input = InputMenu.init("[New Name]", self:prepare_on_submit_task_name())
+  self.new_task_input = InputMenu.init("[New Task]", self:prepare_on_submit_new_task())
   self:add_keybinds()
   return self
 end

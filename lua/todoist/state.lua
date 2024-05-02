@@ -32,6 +32,13 @@ function State:set_selected_task(task)
   self:_update_status()
 end
 
+function State:new_task_context()
+  if self.menu == "today" then
+    return { due_string = "today" }
+  end
+  return {}
+end
+
 function State:set_menu(menu)
   self.menu = menu
   self:_update_status()

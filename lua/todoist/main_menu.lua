@@ -4,7 +4,6 @@ local Menu = require("nui.menu")
 --- @param tasks_menu Tasks
 local function prepare_on_change(state, tasks_menu)
   return function(item, menu)
-    vim.notify(item.text, "info", { title = "Selected in main" })
     local filter = item.text == "Today" and "today" or "overdue"
     state:set_menu(filter)
     state:set_selected_task(nil)
