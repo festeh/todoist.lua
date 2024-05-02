@@ -69,6 +69,18 @@ function MainMenu:add_keybinds(params)
   end)
 end
 
+function MainMenu:query_projects()
+  self.todoist:query_projects(vim.schedule_wrap(function(projects)
+    local body = projects.body
+    local data = vim.fn.json_decode(body)
+    for _, project in ipairs(data) do
+      local node = NuiTree.Node({ _id = project.id, text = project.name, _type = "item", query = { project_id = project.id } })
+      self.ui.tree:add_node(node)
+    end
+    self.ui.tree:render()
+  end))
+end
+
 local M = {}
 
 --- @class Params
@@ -84,15 +96,7 @@ M.init = function(params)
   local on_change = prepare_on_change(params.state, params.tasks)
   self.todoist = params.todoist
   self.ui = self:init_ui(on_change)
-  self.todoist:query_projects(vim.schedule_wrap(function(projects)
-    local body = projects.body
-    local data = vim.fn.json_decode(body)
-    for _, project in ipairs(data) do
-      local node = NuiTree.Node({ _id = project.id, text = project.name, _type = "item", query = { project_id = project.id } })
-      self.ui.tree:add_node(node)
-    end
-    self.ui.tree:render()
-  end))
+  self:query_projects()
   self:add_keybinds(params)
   return self
 end
