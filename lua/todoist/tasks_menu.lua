@@ -95,6 +95,22 @@ function Tasks:add_keybinds()
   menu:map("n", "a", function()
     self.new_task_input:mount()
   end, { nowait = true, noremap = true })
+  -- delete task
+  menu:map("n", "x", function()
+    if state.selected_task == nil then
+      vim.notify("No task selected")
+      return
+    end
+    local res = todoist:delete_task(state.selected_task.id)
+    if Request.is_success(res) then
+      vim.notify("Task deleted", "info", { title = "Success" })
+      menu.tree:remove_node(state.selected_task.id)
+      menu.tree:render()
+      state:set_selected_task(nil)
+    else
+      vim.notify("Failed to delete a task")
+    end
+  end, { nowait = true, noremap = true })
 end
 
 function Tasks:prepare_on_submit_task_name()
@@ -106,7 +122,7 @@ function Tasks:prepare_on_submit_task_name()
     end
     local res = self.todoist:update(selected_task.id, { content = name })
     if Request.is_success(res) then
-      self:reload(self.state.menu)
+      self:reload()
       vim.notify("Task renamed", "info", { title = "Success" })
       state:set_selected_task(Task.init({ content = name, id = selected_task.id }))
     else
@@ -122,14 +138,15 @@ function Tasks:prepare_on_submit_new_task()
     context = vim.tbl_extend("force", context, { content = name })
     local res = self.todoist:new_task(context)
     if Request.is_success(res) then
-      self:reload(self.state.menu)
+      self:reload()
     else
       vim.notify("Failed to create a task")
     end
   end
 end
 
-function Tasks:reload(query)
+function Tasks:reload()
+  local query = self.state:reload_tasks_context()
   self.todoist:query_tasks(query, vim.schedule_wrap(function(out)
     local body = out.body
     local decoded = vim.fn.json_decode(body)

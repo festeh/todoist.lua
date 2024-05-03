@@ -29,6 +29,12 @@ function Todoist:_get_headers(hasJsonBody)
   return headers
 end
 
+--- @class TaskQueryParams
+--- @field project_id string | nil
+--- @field filter string | nil
+
+
+--- @param query TaskQueryParams
 function Todoist:query_tasks(query, callback)
   local headers = self:_get_headers(false)
   local res = curl.get(TASKS_URL, { headers = headers, query = query, callback = callback })
@@ -61,7 +67,13 @@ end
 
 function Todoist:query_projects(callback)
   local headers = self:_get_headers(false)
-  local res = curl.get(PROJECTS_URL, { headers = headers, callback = callback})
+  local res = curl.get(PROJECTS_URL, { headers = headers, callback = callback })
+  return res
+end
+
+function Todoist:delete_task(id)
+  local headers = self:_get_headers(false)
+  local res = curl.delete(TASKS_URL .. "/" .. id, { headers = headers })
   return res
 end
 

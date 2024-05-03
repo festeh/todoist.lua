@@ -13,7 +13,7 @@ local function prepare_on_change(state, tasks_menu)
   return function(item, menu)
     state:set_menu(item)
     state:set_selected_task(nil)
-    tasks_menu:reload(item.query)
+    tasks_menu:reload()
   end
 end
 

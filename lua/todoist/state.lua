@@ -1,4 +1,3 @@
-
 --- @class State
 --- @field status NuiPopup
 --- @field main_window_id number | nil
@@ -33,6 +32,21 @@ function State:set_selected_task(task)
   self:_update_status()
 end
 
+function State:reload_tasks_context()
+  if self.menu == nil then
+    vim.notify("No menu set")
+    return {}
+  end
+  if self.menu.type == "date" then
+    return self.menu.query
+  end
+  if self.menu.type == "project" then
+    return self.menu.query
+  end
+  vim.notify("No context for menu")
+  return {}
+end
+
 function State:new_task_context()
   if self.menu.type == "date" then
     if self.menu.query.due_string == "today" then
@@ -58,7 +72,7 @@ end
 
 function M.init(status)
   State.__index = State
-  local self = setmetatable({status = status}, State)
+  local self = setmetatable({ status = status }, State)
   return self
 end
 
