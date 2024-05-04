@@ -41,6 +41,21 @@ function Todoist:query_tasks(query, callback)
   return res
 end
 
+function Todoist:query_projects(callback)
+  local headers = self:_get_headers(false)
+  local res = curl.get(PROJECTS_URL, { headers = headers, callback = callback })
+  return res
+end
+
+function Todoist:query_all(type, callback)
+  if type == "tasks" then
+    return self:query_tasks({}, callback)
+  elseif type == "projects" then
+    return self:query_projects(callback)
+  end
+  return nil
+end
+
 --- @param id string
 function Todoist:complete(id)
   local headers = self:_get_headers(false)
@@ -65,11 +80,6 @@ function Todoist:update(id, params)
   return res
 end
 
-function Todoist:query_projects(callback)
-  local headers = self:_get_headers(false)
-  local res = curl.get(PROJECTS_URL, { headers = headers, callback = callback })
-  return res
-end
 
 function Todoist:delete_task(id)
   local headers = self:_get_headers(false)

@@ -3,24 +3,16 @@ local Todoist = require("todoist.todoist")
 local State = require("todoist.state")
 local MainMenu = require("todoist.main_menu")
 local Tasks = require("todoist.tasks_menu")
-local Popup = require("nui.popup")
-
-local function status_component()
-  local popup_options = {
-    border = {
-      style = "rounded",
-    },
-    focusable = false,
-  }
-  local popup = Popup(popup_options)
-  return popup
-end
+local Status = require("todoist.status")
+local Data = require("todoist.data")
+local Messages = require("todoist.messages")
 
 local function init_ui(todoist)
-  local status = status_component()
-  local state = State.init(status)
-  local tasks = Tasks.init({ state = state, todoist = todoist })
-  local main_menu = MainMenu.init({ state = state, todoist = todoist, tasks = tasks})
+  local state = State.init()
+  local data = Data.init({ state = state, todoist = todoist })
+  local status = Status.init()
+  local tasks = Tasks.init({ state = state })
+  local main_menu = MainMenu.init({ state = state })
   local upperRow = { Layout.Box(main_menu.ui, { size = "20%" }), Layout.Box(tasks.ui, { size = "80%" }) }
 
   local layout = Layout(
@@ -34,11 +26,16 @@ local function init_ui(todoist)
     Layout.Box(
       {
         Layout.Box(upperRow, { size = "85%", dir = "row" }),
-        Layout.Box(status, { size = "15%" }),
+        Layout.Box(status.ui, { size = "15%" }),
       },
       { dir = "col" }
     )
   )
+  state:add_subscriber(main_menu)
+  state:add_subscriber(tasks)
+  state:add_subscriber(status)
+  state:add_subscriber(data)
+
   return { main_menu = main_menu, tasks = tasks, layout = layout, state = state }
 end
 
@@ -54,6 +51,8 @@ function M.main()
   local ui = init_ui(todoist)
   ui.layout:mount()
   local state = ui.state
+  state:notify({ type = Messages.QUERY_PROJECTS })
+  state:notify({ type = Messages.query_tasks })
   state.main_window_id = ui.main_menu.ui.winid
   state.task_window_id = ui.tasks.ui.winid
 end

@@ -18,5 +18,4 @@ Achtung! Work in progress.
 ```
 
 ## Usage
-
-`:Todoist`
+Set `TODOIST_API_KEY` environment variable. Then open Neovim and run `:Todoist` 

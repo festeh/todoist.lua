@@ -1,14 +1,17 @@
+local Messages = require("todoist.messages")
+
 --- @class State
---- @field status NuiPopup
 --- @field main_window_id number | nil
 --- @field task_window_id number | nil
 --- @field selected_task Task | nil
 --- @field menu table | nil
+--  @field subscribers table
 State = {
   selected_task = nil,
   menu = nil,
   main_window_id = nil,
   task_window_id = nil,
+  subscribers = {},
 }
 
 local M = {}
@@ -19,32 +22,32 @@ function State:repr()
   return string.format("State(selected_task=%s, menu=%s)", task_str, menu)
 end
 
-function State:_update_status()
-  if self.status == nil then
-    return
-  end
-  vim.api.nvim_buf_set_lines(self.status.bufnr, 0, -1, false, { self:repr() })
-end
-
 --- @param task Task | nil
 function State:set_selected_task(task)
   self.selected_task = task
-  self:_update_status()
+  self:notify({ type = Messages.UPDATE_STATUS, status = self:repr() })
 end
 
-function State:reload_tasks_context()
-  if self.menu == nil then
-    vim.notify("No menu set")
-    return {}
-  end
+function State:set_menu(menu)
+  self.menu = menu
+  self:notify({ type = Messages.UPDATE_STATUS, status = self:repr() })
+end
+
+function State:get_task_filter()
   if self.menu.type == "date" then
-    return self.menu.query
+    return function(task)
+      return task.due == self.menu.query.due_string
+    end
   end
   if self.menu.type == "project" then
-    return self.menu.query
+    return function(task)
+      return task.project_id == self.menu.project_id
+    end
   end
-  vim.notify("No context for menu")
-  return {}
+  vim.notify("No menu set")
+  return function(_)
+    return false
+  end
 end
 
 function State:new_task_context()
@@ -59,15 +62,20 @@ function State:new_task_context()
   return {}
 end
 
-function State:set_menu(menu)
-  self.menu = menu
-  self:_update_status()
-end
-
 function State:extract_last_input()
   local input = self.last_input
   self.last_input = ""
   return input
+end
+
+function State:add_subscriber(subscriber)
+  table.insert(self.subscribers, subscriber)
+end
+
+function State:notify(message)
+  for _, subscriber in ipairs(self.subscribers) do
+    subscriber:on_notify(message)
+  end
 end
 
 function M.init(status)
