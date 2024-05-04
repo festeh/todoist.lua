@@ -43,34 +43,37 @@ local function init_ui(on_change)
   return menu
 end
 
+function Tasks:map(char, action)
+  self.ui:map("n", char, action, { nowait = true, noremap = true })
+end
+
 function Tasks:add_keybinds()
-  local menu = self.ui
   local state = self.state
   -- back to main menu
-  menu:map("n", "h", function()
+  self:map("h", function()
     self.state:notify({ type = Messages.MAIN_MENU_FOCUSED })
-  end, { nowait = true, noremap = true })
+  end)
   -- reschedule task to today
-  menu:map("n", "r", function()
-    self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id })
-  end, { nowait = true, noremap = true })
+  self:map("r", function()
+    self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id, due_string = "today" })
+  end)
   -- edit task name
-  menu:map("n", "e", function()
+  self:map("e", function()
     self.change_name_input._.default_value = state.selected_task.content
     self.change_name_input:mount()
-  end, { nowait = true, noremap = true })
+  end)
   -- complete task
-  menu:map("n", "c", function()
+  self:map("c", function()
     self.state:notify({ type = Messages.COMPLETE_TASK, id = state.selected_task.id })
-  end, { nowait = true, noremap = true })
+  end)
   -- add new task
-  menu:map("n", "a", function()
+  self:map("a", function()
     self.new_task_input:mount()
-  end, { nowait = true, noremap = true })
+  end)
   -- delete task
-  menu:map("n", "x", function()
+  self:map("x", function()
     self.state:notify({ type = Messages.DELETE_TASK, id = state.selected_task.id })
-  end, { nowait = true, noremap = true })
+  end)
 end
 
 function Tasks:prepare_on_submit_task_name()
