@@ -111,7 +111,6 @@ function Tasks:on_notify(message)
       })
       nodes = vim.list_extend(nodes, { node })
     end
-    print(#nodes)
     self.ui.tree:set_nodes(nodes)
     self.ui.tree:render()
   end

@@ -33,6 +33,7 @@ function Data:_template_query(type, message, extract_fn)
   local cached_data = nil
   if vim.fn.filereadable(cache_file) == 1 then
     cached_data = vim.fn.json_decode(vim.fn.readfile(cache_file))
+    self[type] = cached_data
     self.state:notify({ type = message, data = cached_data, set_cursor = true })
   end
   self.todoist:query_all(type, vim.schedule_wrap(function(data)

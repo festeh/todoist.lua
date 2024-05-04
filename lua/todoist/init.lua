@@ -52,7 +52,7 @@ function M.main()
   ui.layout:mount()
   local state = ui.state
   state:notify({ type = Messages.QUERY_PROJECTS })
-  state:notify({ type = Messages.query_tasks })
+  state:notify({ type = Messages.QUERY_TASKS })
   state.main_window_id = ui.main_menu.ui.winid
   state.task_window_id = ui.tasks.ui.winid
 end

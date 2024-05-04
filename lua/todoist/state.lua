@@ -73,6 +73,9 @@ function State:add_subscriber(subscriber)
 end
 
 function State:notify(message)
+  if message.type == nil then
+    vim.notify("Message type is nil")
+  end
   for _, subscriber in ipairs(self.subscribers) do
     subscriber:on_notify(message)
   end
