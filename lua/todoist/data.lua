@@ -1,14 +1,27 @@
 local Messages = require('todoist/messages')
+local Cache = require('todoist/cache')
 
 --- @class Data
 --- @field state State
 --- @field todoist Todoist
 --- @field projects table
---- @field tasks table
+--- @field tasks Cache
 Data = {
   projects = {},
-  tasks = {}
 }
+Data.__index = Data
+
+local function is_success(res)
+  return res.status >= 200 and res.status < 300
+end
+
+local function handle_res(res, callback, context)
+  if is_success(res) then
+    callback(res.body)
+  else
+    vim.notify("Error: " .. context)
+  end
+end
 
 local function get_cache_file(type)
   local res = nil
@@ -17,6 +30,7 @@ local function get_cache_file(type)
   elseif type == 'tasks' then
     res = vim.fn.stdpath('data') .. '/todoist.lua/tasks.json'
   end
+  -- TODO: make in a cache responsibility
   if res and vim.fn.filereadable(res) == 0 then
     -- create the file if it does not exist
     -- create base directory if it does not exist
@@ -28,13 +42,11 @@ local function get_cache_file(type)
   return res
 end
 
-function Data:_template_query(type, message, extract_fn)
-  local cache_file = get_cache_file(type)
-  local cached_data = nil
-  if vim.fn.filereadable(cache_file) == 1 then
-    cached_data = vim.fn.json_decode(vim.fn.readfile(cache_file))
-    self[type] = cached_data
-    self.state:notify({ type = message, data = cached_data, set_cursor = true })
+--- @function _template_query
+--- @param cache Cache
+function Data:_template_query(cache, message, extract_fn)
+  if cache:load() then
+    self.state:notify({ type = message, data = cache:get_all(), set_cursor = true })
   end
   self.todoist:query_all(type, vim.schedule_wrap(function(data)
     local body = data.body
@@ -43,7 +55,8 @@ function Data:_template_query(type, message, extract_fn)
     for _, item in ipairs(decoded_data) do
       table.insert(saved_data, extract_fn(item))
     end
-    self[type] = saved_data
+    cache:clear()
+    cache:add_many(saved_data)
     self.state:notify({ type = message, data = decoded_data })
     if data then
       local changed = false
@@ -58,14 +71,14 @@ function Data:_template_query(type, message, extract_fn)
         end
       end
       if changed then
-        vim.fn.writefile({ vim.fn.json_encode(saved_data) }, cache_file)
+        cache:persist()
       end
     end
   end))
 end
 
 function Data:query_projects()
-  self:_template_query('projects', Messages.PROJECTS_LOADED, function(item)
+  self:_template_query(self.projects, Messages.PROJECTS_LOADED, function(item)
     return {
       id = item.id,
       name = item.name,
@@ -77,7 +90,7 @@ function Data:query_projects()
 end
 
 function Data:query_tasks()
-  self:_template_query("tasks", Messages.TASKS_LOADED, function(item)
+  self:_template_query(self.tasks, Messages.TASKS_LOADED, function(item)
     return {
       id = item.id,
       content = item.content,
@@ -98,15 +111,18 @@ function Data:on_notify(message)
     self:query_tasks()
   end
   if message.type == Messages.TASKS_VIEW_REQUESTED then
-    local shown_tasks = {}
     local filter = self.state:get_task_filter()
-    print(#self.tasks)
-    for _, task in ipairs(self.tasks) do
-      if filter(task) then
-        table.insert(shown_tasks, task)
-      end
-    end
-    self.state:notify({ type = Messages.TASKS_VIEW_LOADED, data = shown_tasks })
+    local filtered = self.tasks:get_filtered(filter)
+    self.state:notify({ type = Messages.TASKS_VIEW_LOADED, data = filtered })
+  end
+  if message.type == Messages.NEW_TASK then
+    local ctx = self.state:new_task_context()
+    local params = vim.tbl_extend('force', ctx, message.params)
+    handle_res(self.todoist:new_task(params), function(data)
+      local decoded_data = vim.fn.json_decode(data)
+      self.tasks:add(decoded_data)
+      self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
+    end, "new task")
   end
 end
 
@@ -122,6 +138,8 @@ function M.init(params)
   Data.__index = Data
   self.todoist = params.todoist
   self.state = params.state
+  self.tasks = Cache.init(get_cache_file('tasks'))
+  self.projects = Cache.init(get_cache_file('projects'))
   return self
 end
 

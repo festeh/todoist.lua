@@ -9,22 +9,6 @@ MainMenu = {
 
 }
 
---- @class ProjectView
---- @field id string
-ProjectView = {
-
-}
-ProjectView.__index = ProjectView
-
-function ProjectView.new(id)
-  return setmetatable({ id = id }, ProjectView)
-end
-
-function ProjectView:filter()
-  return function(task)
-    return task.project_id == self.id
-  end
-end
 
 --- @class TodayView
 TodayView = {
@@ -43,7 +27,12 @@ function TodayView:filter()
     end
     return task.due.date == os.date("%Y-%m-%d")
   end
+end
 
+function TodayView:new_task_context()
+  return {
+    due_string = "today"
+  }
 end
 
 --- @class OutdatedView
@@ -63,6 +52,34 @@ function OutdatedView:filter()
     end
     return task.due.date < os.date("%Y-%m-%d")
   end
+end
+
+function OutdatedView:new_task_context()
+  return {
+  }
+end
+
+--- @class ProjectView
+--- @field id string
+ProjectView = {
+
+}
+ProjectView.__index = ProjectView
+
+function ProjectView.new(id)
+  return setmetatable({ id = id }, ProjectView)
+end
+
+function ProjectView:filter()
+  return function(task)
+    return task.project_id == self.id
+  end
+end
+
+function ProjectView:new_task_context()
+  return {
+    project_id = self.id
+  }
 end
 
 --- @param state State

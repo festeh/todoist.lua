@@ -84,7 +84,7 @@ end
 
 function Tasks:prepare_on_submit_new_task()
   return function(name)
-    self.state:notify({ type = Messages.NEW_TASK, name = name })
+    self.state:notify({ type = Messages.NEW_TASK, params = { content = name } })
   end
 end
 

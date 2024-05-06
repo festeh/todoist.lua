@@ -33,21 +33,13 @@ function State:set_menu(menu)
   self:notify({ type = Messages.UPDATE_STATUS, status = self:repr() })
 end
 
+--- # TODO: rename
 function State:get_task_filter()
-  local data = self.menu.data
-  return data:filter()
+  return self.menu.data:filter()
 end
 
 function State:new_task_context()
-  if self.menu.type == "date" then
-    if self.menu.query.due_string == "today" then
-      return self.menu.query
-    end
-  end
-  if self.menu.type == "project" then
-    return self.menu.query
-  end
-  return {}
+  return self.menu.data:new_task_context()
 end
 
 function State:extract_last_input()
