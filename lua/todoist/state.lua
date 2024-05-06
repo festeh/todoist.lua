@@ -34,20 +34,8 @@ function State:set_menu(menu)
 end
 
 function State:get_task_filter()
-  if self.menu.type == "date" then
-    return function(task)
-      return task.due == self.menu.query.due_string
-    end
-  end
-  if self.menu.type == "project" then
-    return function(task)
-      return task.project_id == self.menu.project_id
-    end
-  end
-  vim.notify("No menu set")
-  return function(_)
-    return false
-  end
+  local data = self.menu.data
+  return data:filter()
 end
 
 function State:new_task_context()

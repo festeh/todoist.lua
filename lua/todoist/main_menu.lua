@@ -9,6 +9,62 @@ MainMenu = {
 
 }
 
+--- @class ProjectView
+--- @field id string
+ProjectView = {
+
+}
+ProjectView.__index = ProjectView
+
+function ProjectView.new(id)
+  return setmetatable({ id = id }, ProjectView)
+end
+
+function ProjectView:filter()
+  return function(task)
+    return task.project_id == self.id
+  end
+end
+
+--- @class TodayView
+TodayView = {
+
+}
+TodayView.__index = TodayView
+
+function TodayView.new()
+  return setmetatable({}, TodayView)
+end
+
+function TodayView:filter()
+  return function(task)
+    if not task.due or task.due == vim.NIL then
+      return false
+    end
+    return task.due.date == os.date("%Y-%m-%d")
+  end
+
+end
+
+--- @class OutdatedView
+OutdatedView = {
+
+}
+OutdatedView.__index = OutdatedView
+
+function OutdatedView.new()
+  return setmetatable({}, OutdatedView)
+end
+
+function OutdatedView:filter()
+  return function(task)
+    if not task.due or task.due == vim.NIL then
+      return false
+    end
+    return task.due.date < os.date("%Y-%m-%d")
+  end
+end
+
 --- @param state State
 local function prepare_on_change(state)
   return function(item, menu)
@@ -69,26 +125,23 @@ function MainMenu:on_notify(message)
     nodes = vim.list_extend(nodes, {
       NuiTree.Node({
         _id = "today",
-        type = "today",
-        text = "Today",
         _type = "item",
-        query = { today = true }
+        text = "Today",
+        data = TodayView.new(),
       }),
       NuiTree.Node({
         _id = "outdated",
-        type = "outdated",
-        text = "Outdated",
         _type = "item",
-        query = { outdated = true }
+        text = "Outdated",
+        data = OutdatedView.new(),
       })
     })
     for _, project in ipairs(message.data) do
       local node = NuiTree.Node({
-        type = "project",
         _id = project.id,
-        text = project.name,
         _type = "item",
-        project_id = project.id,
+        text = project.name,
+        data = ProjectView.new(project.id),
       })
       nodes = vim.list_extend(nodes, { node })
     end
@@ -96,6 +149,8 @@ function MainMenu:on_notify(message)
     self.ui.tree:render()
     if message.set_cursor then
       vim.api.nvim_win_set_cursor(self.ui.winid, { 1, 0 })
+      local node, target_linenr = self.ui.tree:get_node(1)
+      self.ui._.on_change(node)
     end
   end
   if message.type == Messages.MAIN_MENU_FOCUSED then

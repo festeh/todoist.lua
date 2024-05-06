@@ -100,6 +100,7 @@ function Data:on_notify(message)
   if message.type == Messages.TASKS_VIEW_REQUESTED then
     local shown_tasks = {}
     local filter = self.state:get_task_filter()
+    print(#self.tasks)
     for _, task in ipairs(self.tasks) do
       if filter(task) then
         table.insert(shown_tasks, task)

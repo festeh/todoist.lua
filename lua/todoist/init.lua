@@ -51,10 +51,11 @@ function M.main()
   local ui = init_ui(todoist)
   ui.layout:mount()
   local state = ui.state
-  state:notify({ type = Messages.QUERY_PROJECTS })
   state:notify({ type = Messages.QUERY_TASKS })
+  state:notify({ type = Messages.QUERY_PROJECTS })
   state.main_window_id = ui.main_menu.ui.winid
   state.task_window_id = ui.tasks.ui.winid
+  state:notify({ type = Messages.UPDATE_STATUS, status = state:repr() })
 end
 
 return M

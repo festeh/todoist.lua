@@ -121,7 +121,6 @@ end
 
 --- @class TasksParams
 --- @field state State
---- @field todoist Todoist
 
 local M = {}
 
