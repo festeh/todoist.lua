@@ -153,6 +153,9 @@ function MainMenu:on_notify(message)
         data = OutdatedView.new(),
       })
     })
+    table.sort(message.data, function(a, b)
+      return a.is_favorite and not b.is_favorite
+    end)
     for _, project in ipairs(message.data) do
       local node = NuiTree.Node({
         _id = project.id,
