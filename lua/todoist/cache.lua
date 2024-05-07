@@ -21,7 +21,10 @@ Cache.clear = function(self)
 end
 
 Cache.persist = function(self)
-  vim.fn.writefile(vim.fn.json_encode(self.tasks), self.path)
+  --- save values of self.tasks to self.path
+  local tasks = vim.tbl_values(self.tasks)
+  local data = vim.fn.json_encode(tasks)
+  vim.fn.writefile({ data }, self.path)
 end
 
 Cache.load = function(self)
@@ -29,7 +32,9 @@ Cache.load = function(self)
     return false
   end
   local data = vim.fn.readfile(self.path)
-  self.tasks = vim.fn.json_decode(data)
+  local tasks = vim.fn.json_decode(data)
+  self:clear()
+  self:add_many(tasks)
   return true
 end
 
@@ -44,13 +49,19 @@ Cache.get_filtered = function(self, filter)
 end
 
 Cache.get_all = function(self)
-  return self.tasks
+  --- return values of self.tasks
+  return vim.tbl_values(self.tasks)
+end
+
+Cache.delete = function(self, id)
+  self.tasks[id] = nil
+  self:persist()
 end
 
 local M = {}
 
 M.init = function(path)
-  local self = setmetatable({path=path}, Cache)
+  local self = setmetatable({ path = path }, Cache)
   Cache.__index = Cache
   return self
 end

@@ -18,6 +18,7 @@ end
 local function handle_res(res, callback, context)
   if is_success(res) then
     callback(res.body)
+    vim.notify("Success: ")
   else
     vim.notify("Error: " .. context)
   end
@@ -44,7 +45,7 @@ end
 
 --- @function _template_query
 --- @param cache Cache
-function Data:_template_query(cache, message, extract_fn)
+function Data:_template_query(type, cache, message, extract_fn)
   if cache:load() then
     self.state:notify({ type = message, data = cache:get_all(), set_cursor = true })
   end
@@ -55,30 +56,29 @@ function Data:_template_query(cache, message, extract_fn)
     for _, item in ipairs(decoded_data) do
       table.insert(saved_data, extract_fn(item))
     end
+    local cached_data = cache:get_all()
     cache:clear()
     cache:add_many(saved_data)
-    self.state:notify({ type = message, data = decoded_data })
-    if data then
-      local changed = false
-      if #data ~= #decoded_data then
-        changed = true
-      else
-        for i, item in ipairs(data) do
-          if not vim.tbl_isequal(item, decoded_data[i]) then
-            changed = true
-            break
-          end
+    self.state:notify({ type = message, data = cache:get_all() })
+    local changed = false
+    if #cached_data ~= #decoded_data then
+      changed = true
+    else
+      for i, item in ipairs(data) do
+        if not vim.tbl_isequal(item, cached_data[i]) then
+          changed = true
+          break
         end
       end
-      if changed then
-        cache:persist()
-      end
+    end
+    if changed then
+      cache:persist()
     end
   end))
 end
 
 function Data:query_projects()
-  self:_template_query(self.projects, Messages.PROJECTS_LOADED, function(item)
+  self:_template_query("projects", self.projects, Messages.PROJECTS_LOADED, function(item)
     return {
       id = item.id,
       name = item.name,
@@ -90,7 +90,7 @@ function Data:query_projects()
 end
 
 function Data:query_tasks()
-  self:_template_query(self.tasks, Messages.TASKS_LOADED, function(item)
+  self:_template_query("tasks", self.tasks, Messages.TASKS_LOADED, function(item)
     return {
       id = item.id,
       content = item.content,
@@ -123,6 +123,12 @@ function Data:on_notify(message)
       self.tasks:add(decoded_data)
       self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
     end, "new task")
+  end
+  if message.type == Messages.DELETE_TASK then
+    handle_res(self.todoist:delete_task(message.id), function(data)
+      self.tasks:delete(message.id)
+      self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
+    end, "delete task")
   end
 end
 
