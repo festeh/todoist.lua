@@ -55,7 +55,7 @@ function Tasks:add_keybinds()
   end)
   -- reschedule task to today
   self:map("r", function()
-    self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id, due_string = "today" })
+    self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id, params = { due_string = "today" } })
   end)
   -- edit task name
   self:map("e", function()

@@ -136,7 +136,7 @@ function Data:on_notify(message)
       self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
     end, "complete task")
   end
-  if message.type == Messages.RENAME_TASK then
+  if message.type == Messages.RENAME_TASK or message.type == Messages.RESCHEDULE_TASK then
     handle_res(self.todoist:update(message.id, message.params), function(data)
       local decoded_data = vim.fn.json_decode(data)
       self.tasks:delete(message.id)
