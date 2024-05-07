@@ -78,7 +78,7 @@ end
 
 function Tasks:prepare_on_submit_task_name()
   return function(name)
-    self.state:notify({ type = Messages.RENAME_TASK, name = name })
+    self.state:notify({ type = Messages.RENAME_TASK, id = self.state.selected_task.id, params = { content = name } })
   end
 end
 

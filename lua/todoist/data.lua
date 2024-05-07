@@ -125,10 +125,24 @@ function Data:on_notify(message)
     end, "new task")
   end
   if message.type == Messages.DELETE_TASK then
-    handle_res(self.todoist:delete_task(message.id), function(data)
+    handle_res(self.todoist:delete_task(message.id), function(_)
       self.tasks:delete(message.id)
       self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
     end, "delete task")
+  end
+  if message.type == Messages.COMPLETE_TASK then
+    handle_res(self.todoist:complete(message.id), function(_)
+      self.tasks:delete(message.id)
+      self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
+    end, "complete task")
+  end
+  if message.type == Messages.RENAME_TASK then
+    handle_res(self.todoist:update(message.id, message.params), function(data)
+      local decoded_data = vim.fn.json_decode(data)
+      self.tasks:delete(message.id)
+      self.tasks:add(decoded_data)
+      self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
+    end, "rename task")
   end
 end
 
