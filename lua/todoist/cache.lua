@@ -6,13 +6,16 @@ Cache = {
 }
 Cache.__index = Cache
 
-Cache.add = function(self, task)
+Cache.add = function(self, task, persist)
   self.tasks[task.id] = task
+  if persist then
+    self:persist()
+  end
 end
 
 Cache.add_many = function(self, tasks)
   for _, task in ipairs(tasks) do
-    self:add(task)
+    self:add(task, false)
   end
 end
 

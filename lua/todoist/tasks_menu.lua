@@ -55,15 +55,24 @@ function Tasks:add_keybinds()
   end)
   -- reschedule task to today
   self:map("r", function()
+    if state.selected_task == nil then
+      return
+    end
     self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id, params = { due_string = "today" } })
   end)
   -- edit task name
   self:map("e", function()
+    if state.selected_task == nil then
+      return
+    end
     self.change_name_input._.default_value = state.selected_task.content
     self.change_name_input:mount()
   end)
   -- complete task
   self:map("c", function()
+    if state.selected_task == nil then
+      return
+    end
     self.state:notify({ type = Messages.COMPLETE_TASK, id = state.selected_task.id })
   end)
   -- add new task
@@ -72,6 +81,9 @@ function Tasks:add_keybinds()
   end)
   -- delete task
   self:map("x", function()
+    if state.selected_task == nil then
+      return
+    end
     self.state:notify({ type = Messages.DELETE_TASK, id = state.selected_task.id })
   end)
 end
@@ -102,7 +114,9 @@ function Tasks:on_notify(message)
     vim.api.nvim_set_current_win(self.state.task_window_id)
     vim.api.nvim_win_set_cursor(self.state.task_window_id, { linenr, 0 })
     local node, target_linenr = self.ui.tree:get_node(linenr)
-    self.ui._.on_change(node)
+    if node then
+      self.ui._.on_change(node)
+    end
   end
   if message.type == Messages.TASKS_VIEW_LOADED then
     local nodes = {}
