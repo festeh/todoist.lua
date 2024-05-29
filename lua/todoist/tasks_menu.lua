@@ -130,6 +130,17 @@ function Tasks:on_notify(message)
     end
     self.ui.tree:set_nodes(nodes)
     self.ui.tree:render()
+    --- check if cursor in on task window
+    if vim.api.nvim_get_current_win() == self.state.task_window_id then
+      local linenr = vim.api.nvim_win_get_cursor(0)[1]
+      if linenr > #message.data then
+        linenr = #message.data
+      end
+      local target_message = message.data[linenr]
+      local selected_task = Task.init({ id = target_message.id, content = target_message.content })
+
+      self.state:set_selected_task(selected_task)
+    end
   end
 end
 

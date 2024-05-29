@@ -1,5 +1,6 @@
 
-local M = {
+--- @class Messages
+Messages = {
   -- Task operations
   NEW_TASK = 1,
   RENAME_TASK = 2,
@@ -19,4 +20,4 @@ local M = {
   TASKS_LOADED = 23,
 }
 
-return M
+return Messages
