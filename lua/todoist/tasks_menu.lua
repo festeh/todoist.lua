@@ -135,11 +135,20 @@ function Tasks:on_notify(message)
       local linenr = vim.api.nvim_win_get_cursor(0)[1]
       if linenr > #message.data then
         linenr = #message.data
+        local current_win = vim.api.nvim_get_current_win()
+        local cursor_pos = vim.api.nvim_win_get_cursor(current_win)
+        if cursor_pos[1] > 1 then
+          local new_cursor_pos = { cursor_pos[1] - 1, cursor_pos[2] }
+          vim.api.nvim_win_set_cursor(current_win, new_cursor_pos)
+        end
       end
-      local target_message = message.data[linenr]
-      local selected_task = Task.init({ id = target_message.id, content = target_message.content })
-
-      self.state:set_selected_task(selected_task)
+      if linenr == 0 then
+        self.state:set_selected_task(nil)
+      else
+        local target_message = message.data[linenr]
+        local selected_task = Task.init({ id = target_message.id, content = target_message.content })
+        self.state:set_selected_task(selected_task)
+      end
     end
   end
 end
