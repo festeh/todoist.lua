@@ -110,6 +110,9 @@ function Data:on_notify(message)
   if message.type == Messages.QUERY_TASKS then
     self:query_tasks()
   end
+  if message.type == Messages.TASKS_LOADED then
+    self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
+  end
   if message.type == Messages.TASKS_VIEW_REQUESTED then
     local filter = self.state:get_task_filter()
     local filtered = self.tasks:get_filtered(filter)

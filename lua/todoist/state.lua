@@ -35,7 +35,13 @@ end
 
 --- # TODO: rename
 function State:get_task_filter()
-  return self.menu.data:filter()
+  local data = (self.menu and self.menu.data) or nil
+  if data == nil then
+    return function(task)
+      return true
+    end
+  end
+  return data:filter()
 end
 
 function State:new_task_context()
