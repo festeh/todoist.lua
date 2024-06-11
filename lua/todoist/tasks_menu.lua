@@ -6,6 +6,7 @@ local NuiTree = require("nui.tree")
 
 --- @class Tasks
 --- @field ui NuiMenu
+--- @field reschedule_input NuiInput
 --- @field change_name_input NuiInput
 --- @field new_task_input NuiInput
 --- @field state State
@@ -60,6 +61,14 @@ function Tasks:add_keybinds()
     end
     self.state:notify({ type = Messages.RESCHEDULE_TASK, id = state.selected_task.id, params = { due_string = "today" } })
   end)
+  -- custom reschedule task
+  self:map("R", function()
+    if state.selected_task == nil then
+      return
+    end
+    self.reschedule_input._.default_value = "tomorrow"
+    self.reschedule_input:mount()
+  end)
   -- edit task name
   self:map("e", function()
     if state.selected_task == nil then
@@ -86,6 +95,12 @@ function Tasks:add_keybinds()
     end
     self.state:notify({ type = Messages.DELETE_TASK, id = state.selected_task.id })
   end)
+end
+
+function Tasks:prepare_on_submit_reschedule()
+  return function(due_string)
+    self.state:notify({ type = Messages.RESCHEDULE_TASK, id = self.state.selected_task.id, params = { due_string = due_string } })
+  end
 end
 
 function Tasks:prepare_on_submit_task_name()
@@ -165,6 +180,7 @@ M.init = function(params)
   local ui = init_ui(prepare_on_change(params.state))
   self.ui = ui
   self.state = params.state
+  self.reschedule_input = InputMenu.init("[Reschedule]", self:prepare_on_submit_reschedule())
   self.change_name_input = InputMenu.init("[New Name]", self:prepare_on_submit_task_name())
   self.new_task_input = InputMenu.init("[New Task]", self:prepare_on_submit_new_task())
   self:add_keybinds()
