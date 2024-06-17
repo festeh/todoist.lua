@@ -62,6 +62,26 @@ function OutdatedView:new_task_context()
   }
 end
 
+--- @class TomorrowView
+TomorrowView = {
+
+}
+
+TomorrowView.__index = TomorrowView
+
+function TomorrowView.new()
+  return setmetatable({}, TomorrowView)
+end
+
+function TomorrowView:filter()
+  return function(task)
+    if not task.due or task.due == vim.NIL then
+      return false
+    end
+    return task.due.date == os.date("%Y-%m-%d", os.time() + 60 * 60 * 24)
+  end
+end
+
 --- @class ProjectView
 --- @field id string
 ProjectView = {
@@ -157,7 +177,13 @@ function MainMenu:on_notify(message)
         _type = "item",
         text = "Outdated",
         data = OutdatedView.new(),
-      })
+      }),
+      NuiTree.Node({
+        _id = "tomorrow",
+        _type = "item",
+        text = "Tomorrow",
+        data = TomorrowView.new(),
+      }),
     })
     table.sort(message.data, function(a, b)
       return a.is_favorite and not b.is_favorite
