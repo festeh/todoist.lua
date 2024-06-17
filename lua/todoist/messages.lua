@@ -18,6 +18,8 @@ Messages = {
   QUERY_TASKS = 21,
   PROJECTS_LOADED = 22,
   TASKS_LOADED = 23,
+  -- Project operations
+  NEW_PROJECT = 33,
 }
 
 return Messages

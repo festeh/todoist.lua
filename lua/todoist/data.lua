@@ -147,6 +147,13 @@ function Data:on_notify(message)
       self.state:notify({ type = Messages.TASKS_VIEW_REQUESTED })
     end, "rename task")
   end
+  if message.type == Messages.NEW_PROJECT then
+    handle_res(self.todoist:add_project(message.params), function(data)
+      local decoded_data = vim.fn.json_decode(data)
+      self.projects:add(decoded_data)
+      self.state:notify({ type = Messages.PROJECTS_LOADED, data = self.projects:get_all(), set_cursor = true })
+    end, "new project")
+  end
 end
 
 local M = {}

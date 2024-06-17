@@ -1,10 +1,13 @@
 local Menu = require("nui.menu")
 local NuiTree = require("nui.tree")
 local Messages = require("todoist.messages")
+local InputMenu = require("todoist.input_menu")
+
 
 --- @class MainMenu
 --- @field ui NuiMenu
 --- @field state State
+--- @field new_project_menu InputMenu
 MainMenu = {
 
 }
@@ -128,10 +131,13 @@ function MainMenu:init_ui(on_change)
 end
 
 --- @param params Params
-function MainMenu:add_keybinds(params)
+function MainMenu:add_keybinds()
   local menu = self.ui
   menu:map("n", "l", function()
     self.state:notify({ type = Messages.TASKS_FOCUSED })
+  end)
+  menu:map("n", "a", function()
+    self.new_project_menu:mount()
   end)
 end
 
@@ -178,6 +184,12 @@ function MainMenu:on_notify(message)
   end
 end
 
+function MainMenu:prepare_on_submit_new_project()
+  return function(name)
+    self.state:notify({ type = Messages.NEW_PROJECT, params = { name = name } })
+  end
+end
+
 local M = {}
 
 --- @class Params
@@ -188,6 +200,7 @@ local M = {}
 M.init = function(params)
   local self = setmetatable({}, MainMenu)
   MainMenu.__index = MainMenu
+  self.new_project_menu = InputMenu.init("[New Project]", self:prepare_on_submit_new_project())
   local on_change = prepare_on_change(params.state)
   self.state = params.state
   self.ui = self:init_ui(on_change)

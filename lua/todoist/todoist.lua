@@ -87,6 +87,13 @@ function Todoist:delete_task(id)
   return res
 end
 
+function Todoist:add_project(params)
+  local headers = self:_get_headers(true)
+  local body = vim.fn.json_encode(params)
+  local res = curl.post(PROJECTS_URL, { headers = headers, body = body })
+  return res
+end
+
 local M = {}
 
 M.init = function()
